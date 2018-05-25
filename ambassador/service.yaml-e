@@ -1,0 +1,4 @@
+name: ambassador
+namespace: broccoli
+
+ambassador_version: __AMBASSADOR_VERSION__

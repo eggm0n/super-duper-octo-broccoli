@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: broccoli
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-service-stable
+  namespace: broccoli
+  annotations:
+    getambassador.io/config: |
+      ---
+      apiVersion: ambassador/v0
+      kind: Mapping
+      name: simple-service-stable-mapping
+      prefix: /simple
+      service: simple-service-stable.broccoli.svc.cluster.local
+    forge.repo: https://github.com/eggm0n/super-duper-octo-broccoli.git
+    forge.descriptor: simple-service/simple/service.yaml
+    forge.version: f7c445d520a54676913ce849b20623c55c144769.git
+  labels: {forge.service: simple-service, forge.profile: stable}
+spec:
+  type: ClusterIP
+  selector:
+    app: simple-service-stable
+  ports:
+  - targetPort: http-api
+    port: 80
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: simple-service-stable
+  namespace: broccoli
+  labels: {forge.service: simple-service, forge.profile: stable}
+  annotations: {forge.repo: 'https://github.com/eggm0n/super-duper-octo-broccoli.git',
+    forge.descriptor: simple-service/simple/service.yaml, forge.version: f7c445d520a54676913ce849b20623c55c144769.git}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: simple-service-stable
+    spec:
+      containers:
+      - name: simple-service-stable
+        image: broccoliregistry.azurecr.io/broccoliregistry/simple-service:f7c445d520a54676913ce849b20623c55c144769.git
+        env:
+        - name: BUILD_PROFILE
+          value: stable
+        ports:
+        - name: http-api
+          containerPort: 8080
+      imagePullSecrets:
+      - name: broccoliregistry

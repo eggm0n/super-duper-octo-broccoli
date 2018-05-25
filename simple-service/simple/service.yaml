@@ -1,0 +1,33 @@
+{% set sanitized_branch = (branch or "dev").replace('/', '-') %}
+
+name: simple-service
+namespace: broccoli
+
+containers:
+ - dockerfile: Dockerfile
+   rebuild:
+     root: /root
+     command: sbt assembly
+     sources:
+       - src
+       - build.sbt
+
+profiles:
+  stable:
+    endpoint: /simple
+    max_memory: 0.25G
+    max_cpu: 0.25
+  canary:
+    endpoint: /simple
+    weight: 50 # percentage of traffic to route to this class of deployment
+    max_memory: 0.25G
+    max_cpu: 0.25
+  default:
+    name: {{sanitized_branch}}
+    endpoint: /{{sanitized_branch}}/simple
+    max_memory: 0.25G
+    max_cpu: 0.2
+
+branches:
+  master: stable
+  dev/*: default
